@@ -348,8 +348,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={value}>
       {!firebaseReady && mounted ? (
         <div className="banner">
-          Firebase is not configured. Copy `env.example` to `.env.local` and restart
-          the dev server.
+          Firebase is not configured. Create `.env.local` from `env.example`, set
+          `NEXT_PUBLIC_FIREBASE_*` (no quotes or spaces after `=`), and restart the
+          dev server. Use `.env.local` — Next.js does not load `env.local`.
         </div>
       ) : null}
       {children}

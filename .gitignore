@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# Wrong name — not loaded by Next.js; often created by mistake next to `.env.local`
+env.local
 
 # vercel
 .vercel
