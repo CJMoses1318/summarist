@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useId, useState } from "react";
 
 import { useAuthContext } from "@/components/providers/AuthProvider";
+import { ChoosePlanPageSkeleton } from "@/components/ui/PageSkeletons";
 import { uiActions } from "@/store/uiSlice";
 import { useAppDispatch } from "@/store/hooks";
 
@@ -137,6 +138,10 @@ export default function ChoosePlanPage() {
     billing === "yearly"
       ? "Cancel your trial at any time before it ends, and you won't be charged"
       : "Billed monthly at checkout. Cancel any time from your account settings.";
+
+  if (!firebaseReady) {
+    return <ChoosePlanPageSkeleton />;
+  }
 
   return (
     <main className="plan">

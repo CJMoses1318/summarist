@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 
 import { RemoteBookCover } from "@/components/books/RemoteBookCover";
+import { SearchResultsSkeleton } from "@/components/ui/PageSkeletons";
 import { searchBooks } from "@/lib/books-api";
 import type { Book } from "@/types/book";
 
@@ -62,7 +63,7 @@ export function SearchBar({ pathname }: { pathname: string | null }) {
         <div className="searchResultsPanel">
           <div className="searchInner">
             {loading ? (
-              <div style={{ padding: "12px" }}>Searching…</div>
+              <SearchResultsSkeleton />
             ) : (
               <>
                 {!results.length ? (

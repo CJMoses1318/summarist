@@ -1,17 +1,11 @@
 import { Suspense } from "react";
 
 import { SettingsClient } from "./SettingsClient";
-import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { SettingsPageSkeleton } from "@/components/ui/PageSkeletons";
 
 export default function SettingsPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="settingsPage pagePad">
-          <SkeletonBlock height={260} />
-        </main>
-      }
-    >
+    <Suspense fallback={<SettingsPageSkeleton />}>
       <SettingsClient />
     </Suspense>
   );

@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { useAuthContext } from "@/components/providers/AuthProvider";
-import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { SettingsPageSkeleton } from "@/components/ui/PageSkeletons";
+
+/** Production sales page (stable URL across preview deployments). */
+const CHOOSE_PLAN_URL = "https://summarist.vercel.app/choose-plan";
 
 function planDisplayName(plan: string | undefined) {
   if (plan === "premium") return "Premium";
@@ -19,14 +21,7 @@ export function SettingsClient() {
   const { user, profile, authLoading, firebaseReady } = useAuthContext();
 
   if (!firebaseReady || authLoading) {
-    return (
-      <main className="settingsPage pagePad">
-        <SkeletonBlock height={44} />
-        <SkeletonBlock height={12} />
-        <SkeletonBlock height={96} />
-        <SkeletonBlock height={72} />
-      </main>
-    );
+    return <SettingsPageSkeleton />;
   }
 
   if (!user) {
@@ -34,9 +29,9 @@ export function SettingsClient() {
       <main className="settingsPage pagePad settingsPage--guest">
         {checkout === "success" ? (
           <div className="authError settingsPage__checkoutNote">
-            Thanks! Stripe can take up to a minute to sync subscription status via webhook.
-            Refresh shortly if needed. Log in with the same email you used at checkout to see
-            your plan here.
+            Thanks for subscribing. Your plan appears here after you sign in with the same
+            account you used at checkout. If the banner still shows after login, wait a few
+            seconds for the server to finish updating your plan, then refresh.
           </div>
         ) : null}
         <Image src="/login.png" alt="" width={240} height={165} />
@@ -58,8 +53,10 @@ export function SettingsClient() {
     <main className="settingsPage pagePad">
       {checkout === "success" ? (
         <div className="authError settingsPage__checkoutNote">
-          Thanks! Stripe can take up to a minute to sync subscription status via webhook.
-          Refresh shortly if needed.
+          Checkout completed. Your plan updates when our server receives Stripe&apos;s webhook
+          (usually within seconds). This page refreshes automatically from your profile; if the
+          plan still shows Basic, confirm the Stripe webhook is configured for this deployment
+          and try a manual refresh.
         </div>
       ) : null}
 
@@ -72,9 +69,13 @@ export function SettingsClient() {
         </h2>
         <p className="settingsPage__planValue">{planName}</p>
         {planKey === "basic" ? (
-          <Link href="/choose-plan" className="settingsPage__upgradeLink">
+          <a
+            href={CHOOSE_PLAN_URL}
+            className="settingsPage__upgradeLink"
+            rel="noopener noreferrer"
+          >
             <span className="settingsPage__upgradeBtn">Upgrade to Premium</span>
-          </Link>
+          </a>
         ) : null}
       </section>
 
@@ -84,7 +85,9 @@ export function SettingsClient() {
         <h2 id="settings-email-heading" className="settingsPage__sectionTitle">
           Email
         </h2>
-        <p className="settingsPage__emailValue">{user.email}</p>
+        <p className="settingsPage__emailValue">
+          {user.email ?? user.providerData[0]?.email ?? "Not available for this sign-in method"}
+        </p>
       </section>
     </main>
   );

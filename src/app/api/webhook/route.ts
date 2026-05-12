@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type Firestore } from "firebase-admin/firestore";
 
 import { getAdminDb } from "@/lib/firebase/admin";
 
@@ -16,6 +16,20 @@ function getStripe() {
 function planFromBillingLabel(billing: string | undefined) {
   if (billing === "annual") return "premium-plus";
   return "premium";
+}
+
+async function upsertPlanForUid(
+  db: Firestore,
+  uid: string,
+  plan: "basic" | "premium" | "premium-plus",
+  stripeCustomerId?: string,
+) {
+  const payload: Record<string, unknown> = {
+    subscriptionPlan: plan,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  if (stripeCustomerId) payload.stripeCustomerId = stripeCustomerId;
+  await db.collection("users").doc(uid).set(payload, { merge: true });
 }
 
 export async function POST(request: Request) {
@@ -66,14 +80,24 @@ export async function POST(request: Request) {
             ? session.customer
             : session.customer?.id;
 
-        await db.collection("users").doc(uid).set(
-          {
-            subscriptionPlan: plan,
-            stripeCustomerId: customerId ?? "",
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+        await upsertPlanForUid(db, uid, plan, customerId ?? "");
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const uid = subscription.metadata?.firebaseUid;
+        if (!uid) break;
+        if (subscription.status !== "active" && subscription.status !== "trialing") {
+          break;
+        }
+        const billing = subscription.metadata?.billing ?? "monthly";
+        const plan = planFromBillingLabel(billing);
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : subscription.customer?.id;
+        await upsertPlanForUid(db, uid, plan, customerId ?? "");
         break;
       }
       case "customer.subscription.deleted": {

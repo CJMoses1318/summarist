@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { BookCard } from "@/components/books/BookCard";
 import { useAuthContext } from "@/components/providers/AuthProvider";
-import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { LibraryPageSkeleton } from "@/components/ui/PageSkeletons";
 import { uiActions } from "@/store/uiSlice";
 import { useAppDispatch } from "@/store/hooks";
 
@@ -13,12 +13,7 @@ export default function LibraryPage() {
   const { profile, user, firebaseReady, authLoading } = useAuthContext();
 
   if (!firebaseReady || authLoading) {
-    return (
-      <main className="pagePad">
-        <SkeletonBlock height={120} />
-        <SkeletonBlock height={460} />
-      </main>
-    );
+    return <LibraryPageSkeleton />;
   }
 
   if (!user) {

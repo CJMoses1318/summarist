@@ -1,0 +1,155 @@
+.sectionTitleBar {
+  max-width: 280px;
+  margin-bottom: 12px;
+}
+
+.subTitleBar {
+  max-width: 220px;
+  margin-bottom: 14px;
+}
+
+.selectedBanner {
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.booksTrack {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow: hidden;
+  padding-bottom: 4px;
+}
+
+.tileCard {
+  flex: 0 0 auto;
+  width: min(280px, calc(100vw - 44px));
+  min-width: 0;
+  padding: 14px 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(3, 43, 65, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.bookHero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 36px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bookHeroText {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.bookCoverCol {
+  flex: 0 0 auto;
+  width: min(200px, 100%);
+  display: flex;
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.bookCover {
+  max-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 10px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 8px;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.libraryRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.libraryLines {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(3, 43, 65, 0.06);
+}
+
+.searchRow:last-child {
+  border-bottom: none;
+}
+
+.searchText {
+  flex: 1;
+  min-width: 0;
+}
+
+.planHeader {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.planCards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.planCard {
+  height: 112px;
+  border-radius: 12px;
+}
+
+.playerLines {
+  margin-top: 4px;
+}
+
+.audioDockSk {
+  position: fixed;
+  bottom: 0;
+  left: var(--shell-sidebar-width);
+  right: 0;
+  height: 108px;
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid var(--summarist-border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  z-index: 40;
+}
+
+.audioDockBars {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

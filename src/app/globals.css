@@ -629,12 +629,14 @@ button {
 }
 
 .skeletonPulse {
-  display: inline-block;
   animation: shimmer 1200ms ease-in-out infinite;
   opacity: 0.75;
 }
 
 .skeletonBlock {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 10px;
   background: rgba(3, 43, 65, 0.12);
   margin-bottom: 14px;
