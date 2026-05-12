@@ -1,0 +1,343 @@
+/* Choose plan — layout aligned with marketing reference. Imported only from choose-plan/page.tsx */
+
+.plan {
+  --plan-max: 560px;
+  --plan-green: var(--summarist-green);
+  --plan-navy: var(--summarist-navy);
+  --plan-muted: #6f828a;
+  color: var(--plan-navy);
+  background: #fff;
+}
+
+.wrapper.wrapper__full {
+  max-width: 1070px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+
+/* Hero */
+.plan__header--wrapper {
+  background: var(--plan-navy);
+  color: #fff;
+  text-align: center;
+  padding: 48px 20px 0;
+  margin-inline: calc(50% - 50vw);
+  width: 100vw;
+  max-width: 100vw;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .plan__header--wrapper {
+    padding: 56px 24px 0;
+  }
+}
+
+.plan__headerTitle {
+  font-size: clamp(1.35rem, 4vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.25;
+  max-width: 520px;
+  margin: 0 auto 12px;
+}
+
+.plan__headerSubtitle {
+  font-size: 0.95rem;
+  font-weight: 400;
+  opacity: 0.92;
+  max-width: 440px;
+  margin: 0 auto 0;
+  line-height: 1.45;
+}
+
+.plan__headerArch {
+  margin-top: 36px;
+  background: #fff;
+  border-radius: 50% 50% 0 0 / 28% 28% 0 0;
+  padding: 28px 24px 8px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 200px;
+}
+
+.plan__headerArch img {
+  max-width: min(420px, 100%);
+  height: auto;
+  display: block;
+}
+
+/* Features */
+.plan__features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  padding: 40px 0 32px;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .plan__features {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding: 48px 0 40px;
+  }
+}
+
+.plan__feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.plan__featureIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--plan-navy);
+}
+
+.plan__featureText {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--plan-navy);
+  max-width: 240px;
+}
+
+/* Section title above plan cards */
+.plan__intro {
+  text-align: center;
+  padding: 8px 0 28px;
+  max-width: var(--plan-max);
+  margin: 0 auto;
+}
+
+.plan__introTitle {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+/* Checkout panel: contains cards + sticky CTA; ends before FAQ */
+.plan__checkoutPanel {
+  max-width: var(--plan-max);
+  margin: 0 auto;
+}
+
+.plan__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.plan__cardLabel {
+  display: block;
+  cursor: pointer;
+  margin: 0;
+}
+
+.plan__cardRadio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.plan__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 16px;
+  border: 3px solid var(--summarist-border);
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.plan__cardLabel:focus-within .plan__card {
+  outline: 2px solid var(--plan-navy);
+  outline-offset: 2px;
+}
+
+.plan__card.isSelected {
+  border-color: var(--plan-green);
+  background: rgba(43, 217, 124, 0.06);
+}
+
+.plan__cardRadioDot {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #9aa8ae;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan__card.isSelected .plan__cardRadioDot {
+  border-color: var(--plan-green);
+}
+
+.plan__cardRadioDot::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.plan__card.isSelected .plan__cardRadioDot::after {
+  background: var(--plan-green);
+}
+
+.plan__cardBody {
+  flex: 1;
+  text-align: left;
+}
+
+.plan__cardTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.plan__cardPrice {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.plan__cardHint {
+  font-size: 0.85rem;
+  color: var(--plan-muted);
+  margin-top: 6px;
+}
+
+.plan__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--plan-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plan__or::before,
+.plan__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--summarist-border);
+}
+
+/* Sticky CTA */
+.plan__card--cta {
+  position: sticky;
+  top: 16px;
+  z-index: 20;
+  margin-top: 24px;
+  padding: 20px 0 24px;
+  background: #fff;
+  border-top: 1px solid var(--summarist-border);
+  box-shadow: 0 -8px 24px rgba(3, 43, 65, 0.06);
+  text-align: center;
+}
+
+.plan__ctaButton {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--plan-green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.plan__ctaButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.plan__ctaButton:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.plan__ctaDisclaimer {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--plan-muted);
+  line-height: 1.4;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* FAQ (inside checkout panel so sticky CTA has scroll range through the accordion) */
+.faq__wrapper {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  padding-top: clamp(40px, 8vh, 88px);
+  border-top: 1px solid var(--summarist-border);
+}
+
+.faq__item {
+  border-bottom: 1px solid var(--summarist-border);
+}
+
+.faq__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 4px;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--plan-navy);
+  text-align: left;
+  cursor: pointer;
+}
+
+.faq__trigger:hover {
+  color: #0a3d5c;
+}
+
+.faq__chevron {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--plan-navy);
+  border-bottom: 2px solid var(--plan-navy);
+  transform: rotate(45deg);
+  margin-top: -4px;
+  transition: transform 0.2s;
+}
+
+.faq__item.isOpen .faq__chevron {
+  transform: rotate(-135deg);
+  margin-top: 4px;
+}
+
+.faq__panel {
+  padding: 0 4px 16px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--plan-muted);
+}

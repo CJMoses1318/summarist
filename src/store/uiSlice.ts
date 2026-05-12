@@ -8,12 +8,15 @@ type UiSliceState = {
   authModalOpen: boolean;
   authModalMode: AuthModalMode;
   mobileSidebarOpen: boolean;
+  /** 0–3: reader font size on /player */
+  readerFontScale: number;
 };
 
 const initialState: UiSliceState = {
   authModalOpen: false,
   authModalMode: "login",
   mobileSidebarOpen: false,
+  readerFontScale: 1,
 };
 
 const uiSlice = createSlice({
@@ -33,6 +36,10 @@ const uiSlice = createSlice({
     },
     setMobileSidebar(state, action: PayloadAction<boolean>) {
       state.mobileSidebarOpen = action.payload;
+    },
+    setReaderFontScale(state, action: PayloadAction<number>) {
+      const n = Math.floor(action.payload);
+      state.readerFontScale = Math.min(3, Math.max(0, n));
     },
   },
 });

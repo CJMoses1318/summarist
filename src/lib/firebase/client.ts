@@ -1,8 +1,8 @@
 "use client";
 
-import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import type { FirebaseApp } from "firebase/app";
+import type { Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
@@ -13,30 +13,45 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
 };
 
-let appSingleton: FirebaseApp | null | undefined;
+export type FirebaseClient = {
+  app: FirebaseApp;
+  auth: Auth;
+  db: Firestore;
+};
 
-/** Returns null until env is configured—avoids crashing `next build` without keys. */
-export function getFirebaseApp(): FirebaseApp | null {
-  if (typeof window === "undefined") return null;
-  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
+let clientPromise: Promise<FirebaseClient | null> | null = null;
 
-  if (appSingleton !== undefined) return appSingleton ?? null;
-
-  try {
-    appSingleton = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    return appSingleton;
-  } catch {
-    appSingleton = null;
-    return null;
+/**
+ * Lazy-loads Firebase SDKs in a single shared chunk after first call.
+ * Keeps the main bundle smaller for faster first paint / TTI.
+ */
+export function loadFirebaseClient(): Promise<FirebaseClient | null> {
+  if (typeof window === "undefined") return Promise.resolve(null);
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    return Promise.resolve(null);
   }
-}
 
-export function getFirebaseAuth(): Auth | null {
-  const app = getFirebaseApp();
-  return app ? getAuth(app) : null;
-}
+  if (!clientPromise) {
+    clientPromise = (async () => {
+      const [{ initializeApp, getApps, getApp }, { getAuth }, { getFirestore }] =
+        await Promise.all([
+          import("firebase/app"),
+          import("firebase/auth"),
+          import("firebase/firestore"),
+        ]);
 
-export function getFirebaseFirestore(): Firestore | null {
-  const app = getFirebaseApp();
-  return app ? getFirestore(app) : null;
+      try {
+        const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        return {
+          app,
+          auth: getAuth(app),
+          db: getFirestore(app),
+        };
+      } catch {
+        return null;
+      }
+    })();
+  }
+
+  return clientPromise;
 }

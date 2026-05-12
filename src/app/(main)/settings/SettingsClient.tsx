@@ -7,6 +7,12 @@ import { useSearchParams } from "next/navigation";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
 
+function planDisplayName(plan: string | undefined) {
+  if (plan === "premium") return "Premium";
+  if (plan === "premium-plus") return "Premium+";
+  return "Basic";
+}
+
 export function SettingsClient() {
   const searchParams = useSearchParams();
   const checkout = searchParams.get("checkout");
@@ -14,60 +20,65 @@ export function SettingsClient() {
 
   if (!firebaseReady || authLoading) {
     return (
-      <main className="pagePad">
-        <SkeletonBlock height={120} />
-        <SkeletonBlock height={210} />
+      <main className="settingsPage pagePad">
+        <SkeletonBlock height={44} />
+        <SkeletonBlock height={12} />
+        <SkeletonBlock height={96} />
+        <SkeletonBlock height={72} />
       </main>
     );
   }
 
   if (!user) {
     return (
-      <main className="pagePad" style={{ textAlign: "center" }}>
+      <main className="settingsPage pagePad settingsPage--guest">
         <Image src="/login.png" alt="" width={240} height={165} />
-        <div style={{ marginTop: 12 }} className="sectionTitle">
-          Log in to see your subscription
-        </div>
+        <div className="settingsPage__guestTitle">Log in to see your subscription</div>
       </main>
     );
   }
 
-  const planLabel =
+  const planKey =
     profile?.subscriptionPlan === "premium"
       ? "premium"
       : profile?.subscriptionPlan === "premium-plus"
         ? "premium-plus"
         : "basic";
 
+  const planName = planDisplayName(profile?.subscriptionPlan);
+
   return (
-    <main className="pagePad">
+    <main className="settingsPage pagePad">
       {checkout === "success" ? (
-        <div className="authError" style={{ marginBottom: 16 }}>
+        <div className="authError settingsPage__checkoutNote">
           Thanks! Stripe can take up to a minute to sync subscription status via webhook.
           Refresh shortly if needed.
         </div>
       ) : null}
 
-      <div style={{ marginBottom: 12 }} className="sectionTitle">
-        Settings
-      </div>
+      <h1 className="settingsPage__heading">Settings</h1>
+      <div className="settingsPage__titleRule" aria-hidden />
 
-      <div style={{ marginBottom: 10, fontWeight: 700 }}>Subscription</div>
+      <section className="settingsPage__section" aria-labelledby="settings-subscription-heading">
+        <h2 id="settings-subscription-heading" className="settingsPage__sectionTitle">
+          Your Subscription plan
+        </h2>
+        <p className="settingsPage__planValue">{planName}</p>
+        {planKey === "basic" ? (
+          <Link href="/choose-plan" className="settingsPage__upgradeLink">
+            <span className="settingsPage__upgradeBtn">Upgrade to Premium</span>
+          </Link>
+        ) : null}
+      </section>
 
-      <div style={{ marginBottom: 18 }}>Plan: {planLabel}</div>
+      <div className="settingsPage__divider" aria-hidden />
 
-      {planLabel === "basic" ? (
-        <Link href="/choose-plan">
-          <button type="button" className="btnPrimary">
-            Upgrade plan
-          </button>
-        </Link>
-      ) : null}
-
-      <div style={{ marginTop: 28, marginBottom: 10, fontWeight: 700 }}>
-        Email
-      </div>
-      <div>{user.email}</div>
+      <section className="settingsPage__section" aria-labelledby="settings-email-heading">
+        <h2 id="settings-email-heading" className="settingsPage__sectionTitle">
+          Email
+        </h2>
+        <p className="settingsPage__emailValue">{user.email}</p>
+      </section>
     </main>
   );
 }

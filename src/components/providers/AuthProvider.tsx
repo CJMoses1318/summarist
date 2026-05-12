@@ -1,37 +1,18 @@
 "use client";
 
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  type User,
-} from "firebase/auth";
+import type { User } from "firebase/auth";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
-import {
-  getFirebaseAuth,
-  getFirebaseFirestore,
-} from "@/lib/firebase/client";
+import { loadFirebaseClient, type FirebaseClient } from "@/lib/firebase/client";
 import type { Book } from "@/types/book";
 import type { SubscriptionPlan, UserProfile } from "@/types/user-profile";
 
@@ -99,105 +80,160 @@ function uniqueBooks(books: Book[]): Book[] {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const [client, setClient] = useState<FirebaseClient | null | undefined>(
+    undefined,
+  );
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    let cancelled = false;
+    void loadFirebaseClient().then((c) => {
+      if (!cancelled) setClient(c);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const auth = mounted ? getFirebaseAuth() : null;
-  const db = mounted ? getFirebaseFirestore() : null;
-  const firebaseReady = mounted && Boolean(auth && db);
+  const auth = client?.auth ?? null;
+  const db = client?.db ?? null;
+  const firebaseResolved = client !== undefined;
+  const firebaseReady = Boolean(auth && db);
 
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  /** Avoids setting authLoading on token refresh (onSnapshot may not re-fire). */
+  const authSessionUidRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!firebaseResolved) return;
     if (!auth || !db) {
       setAuthLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      setAuthLoading(true);
-      if (!firebaseUser) {
-        setProfile(null);
-        setAuthLoading(false);
-        return;
-      }
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
 
-      try {
-        const ref = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(ref);
+    void (async () => {
+      const [{ onAuthStateChanged }, { doc, getDoc, setDoc, updateDoc, serverTimestamp }] =
+        await Promise.all([import("firebase/auth"), import("firebase/firestore")]);
+      if (cancelled) return;
 
-        if (!snap.exists()) {
-          await setDoc(ref, {
-            email: firebaseUser.email,
-            subscriptionPlan: "basic",
-            savedBooks: [],
-            finishedBookIds: [],
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        } else if (firebaseUser.email) {
-          await updateDoc(ref, {
-            email: firebaseUser.email,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch {
-        // ignore—rules may block until deploy
-      }
-    });
+      const u = onAuthStateChanged(auth, async (firebaseUser) => {
+        setUser(firebaseUser);
 
-    return () => unsubscribe();
-  }, [mounted, auth, db]);
-
-  useEffect(() => {
-    if (!user || !db) return;
-
-    const ref = doc(db, "users", user.uid);
-
-    const unsubscribe = onSnapshot(
-      ref,
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          setProfile(emptyProfileState());
+        if (!firebaseUser) {
+          authSessionUidRef.current = null;
+          setProfile(null);
           setAuthLoading(false);
           return;
         }
 
-        const data = snapshot.data() as Partial<UserProfile>;
-        const plan = (["basic", "premium", "premium-plus"] as const).includes(
-          data.subscriptionPlan as SubscriptionPlan,
-        )
-          ? (data.subscriptionPlan as SubscriptionPlan)
-          : "basic";
+        const uid = firebaseUser.uid;
+        const sessionChanged = uid !== authSessionUidRef.current;
+        authSessionUidRef.current = uid;
+        if (sessionChanged) {
+          setAuthLoading(true);
+        }
 
-        setProfile({
-          subscriptionPlan: plan,
-          savedBooks: Array.isArray(data.savedBooks)
-            ? (data.savedBooks as Book[])
-            : [],
-          finishedBookIds: Array.isArray(data.finishedBookIds)
-            ? (data.finishedBookIds as string[])
-            : [],
-          stripeCustomerId: data.stripeCustomerId,
-        });
-        setAuthLoading(false);
-      },
-      () => {
-        setProfile(emptyProfileState());
-        setAuthLoading(false);
-      },
-    );
+        try {
+          const ref = doc(db, "users", firebaseUser.uid);
+          const snap = await getDoc(ref);
 
-    return () => unsubscribe();
-  }, [mounted, user, db]);
+          if (!snap.exists()) {
+            await setDoc(ref, {
+              email: firebaseUser.email,
+              subscriptionPlan: "basic",
+              savedBooks: [],
+              finishedBookIds: [],
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          } else if (firebaseUser.email) {
+            await updateDoc(ref, {
+              email: firebaseUser.email,
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch {
+          // ignore—rules may block until deploy
+        }
+      });
+      if (cancelled) {
+        u();
+        return;
+      }
+      unsubscribe = u;
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [firebaseResolved, auth, db]);
+
+  useEffect(() => {
+    if (!user || !db) return;
+
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    void (async () => {
+      const { doc, onSnapshot } = await import("firebase/firestore");
+      if (cancelled) return;
+
+      const ref = doc(db, "users", user.uid);
+
+      const u = onSnapshot(
+        ref,
+        (snapshot) => {
+          if (!snapshot.exists()) {
+            setProfile(emptyProfileState());
+            setAuthLoading(false);
+            return;
+          }
+
+          const data = snapshot.data() as Partial<UserProfile>;
+          const plan = (["basic", "premium", "premium-plus"] as const).includes(
+            data.subscriptionPlan as SubscriptionPlan,
+          )
+            ? (data.subscriptionPlan as SubscriptionPlan)
+            : "basic";
+
+          setProfile({
+            subscriptionPlan: plan,
+            savedBooks: Array.isArray(data.savedBooks)
+              ? (data.savedBooks as Book[])
+              : [],
+            finishedBookIds: Array.isArray(data.finishedBookIds)
+              ? (data.finishedBookIds as string[])
+              : [],
+            stripeCustomerId: data.stripeCustomerId,
+          });
+          setAuthLoading(false);
+        },
+        () => {
+          setProfile(emptyProfileState());
+          setAuthLoading(false);
+        },
+      );
+      if (cancelled) {
+        u();
+        return;
+      }
+      unsubscribe = u;
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [user, db]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
+    const { signOut } = await import("firebase/auth");
     await signOut(auth);
   }, [auth]);
 
@@ -206,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!auth)
         return { ok: false as const, message: "Firebase not configured." };
       try {
+        const { createUserWithEmailAndPassword } = await import("firebase/auth");
         await createUserWithEmailAndPassword(auth, email, password);
         return { ok: true as const };
       } catch (e) {
@@ -223,6 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!auth)
         return { ok: false as const, message: "Firebase not configured." };
       try {
+        const { signInWithEmailAndPassword } = await import("firebase/auth");
         await signInWithEmailAndPassword(auth, email, password);
         return { ok: true as const };
       } catch (e) {
@@ -236,16 +274,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth)
       return { ok: false as const, message: "Firebase not configured." };
     try {
+      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
       await signInWithPopup(auth, new GoogleAuthProvider());
       return { ok: true as const };
     } catch (e) {
+      const code =
+        typeof e === "object" &&
+        e &&
+        "code" in e &&
+        typeof (e as { code?: string }).code === "string"
+          ? (e as { code: string }).code
+          : "";
+      if (code === "auth/operation-not-allowed") {
+        return {
+          ok: false as const,
+          message:
+            "Google sign-in is not enabled for this Firebase project. In the Firebase console, open Authentication → Sign-in method and turn on Google.",
+        };
+      }
+      if (
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        return { ok: false as const, message: "Sign-in was cancelled." };
+      }
       const message =
         typeof e === "object" &&
         e &&
         "message" in e &&
         typeof (e as Error).message === "string"
           ? (e as Error).message
-          : "Google sign-in cancelled.";
+          : "Google sign-in failed.";
       return {
         ok: false as const,
         message,
@@ -258,6 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!auth)
         return { ok: false as const, message: "Firebase not configured." };
       try {
+        const { sendPasswordResetEmail } = await import("firebase/auth");
         await sendPasswordResetEmail(auth, email);
         return { ok: true as const };
       } catch (e) {
@@ -287,6 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (book: Book) => {
       if (!user || !db) return;
 
+      const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
       const next = uniqueBooks([...(profile?.savedBooks ?? []), book]);
 
       await setDoc(
@@ -302,7 +363,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (bookId: string) => {
       if (!user || !db) return;
 
-      const next = Array.from(new Set([...(profile?.finishedBookIds ?? []), bookId]));
+      const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
+      const next = Array.from(
+        new Set([...(profile?.finishedBookIds ?? []), bookId]),
+      );
 
       await setDoc(
         doc(db, "users", user.uid),
@@ -346,7 +410,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!firebaseReady && mounted ? (
+      {client === null ? (
         <div className="banner">
           Firebase is not configured. Create `.env.local` from `env.example`, set
           `NEXT_PUBLIC_FIREBASE_*` (no quotes or spaces after `=`), and restart the

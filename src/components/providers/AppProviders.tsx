@@ -5,7 +5,7 @@ import { Provider } from "react-redux";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 
-import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthModalGate } from "@/components/auth/AuthModalGate";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { type AppStore, makeStore } from "@/store/store";
 
@@ -19,7 +19,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
   return (
     <Provider store={storeRef.current}>
       <AuthProvider>
-        <AuthModal />
+        <AuthModalGate />
         {children}
       </AuthProvider>
     </Provider>

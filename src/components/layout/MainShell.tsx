@@ -34,7 +34,7 @@ export default function MainShell({ children }: { children: ReactNode }) {
 
           <div className="searchRow">
             <SearchBar pathname={pathname} />
-            <div className="shell__brand">
+            <div className="shell__brand shell__brand--header">
               <Link href="/for-you">
                 <Image alt="Summarist" src="/logo.png" width={154} height={35} />
               </Link>

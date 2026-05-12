@@ -15,4 +15,6 @@ export interface Book {
   tags?: string[];
   bookDescription?: string;
   authorDescription?: string;
+  /** Total audio length in seconds when provided by the API */
+  durationSeconds?: number;
 }

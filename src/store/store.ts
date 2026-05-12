@@ -7,7 +7,7 @@ export const makeStore = () =>
     reducer: {
       ui: uiReducer,
     },
-    devTools: true,
+    devTools: process.env.NODE_ENV !== "production",
   });
 
 export type AppStore = ReturnType<typeof makeStore>;

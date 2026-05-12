@@ -1,22 +1,22 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   FiBook,
-  FiHeadphones,
+  FiBookmark,
+  FiEdit2,
   FiHelpCircle,
+  FiHome,
+  FiLogIn,
   FiLogOut,
   FiSearch,
   FiSettings,
-  FiLogIn,
 } from "react-icons/fi";
-import { TbLayoutSidebarLeftExpand } from "react-icons/tb";
 
 import { useAuthContext } from "@/components/providers/AuthProvider";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { uiActions } from "@/store/uiSlice";
-import { useAppDispatch } from "@/store/hooks";
 
 type SidebarNavProps = {
   pathname: string | null;
@@ -28,6 +28,9 @@ export function SidebarNav({ pathname, placement, closeDrawer }: SidebarNavProps
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, logout, firebaseReady } = useAuthContext();
+  const readerFontScale = useAppSelector((s) => s.ui.readerFontScale);
+
+  const isPlayerRoute = Boolean(pathname?.startsWith("/player/"));
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(`${href}/`);
@@ -38,89 +41,113 @@ export function SidebarNav({ pathname, placement, closeDrawer }: SidebarNavProps
   };
 
   return (
-    <>
-      <div className={`shell__asideInner placement-${placement}`}>
-        <nav className="shell__asideNav" aria-label="Primary">
-          <button
-            type="button"
-            className={`shell__asideNavItem ${isActive("/for-you") ? "isAccent" : ""}`}
-            onClick={() => navigate("/for-you")}
-          >
-            <TbLayoutSidebarLeftExpand />
-            For you
-          </button>
+    <div className={`shell__asideInner placement-${placement}`}>
+      <Link href="/for-you" className="shell__asideBrand" onClick={() => closeDrawer?.()}>
+        <FiBook className="shell__asideBrandIcon" aria-hidden />
+        <span className="shell__asideBrandText">Summarist</span>
+      </Link>
 
-          <button
-            type="button"
-            className={`shell__asideNavItem ${isActive("/library") ? "isAccent" : ""}`}
-            onClick={() => navigate("/library")}
-          >
-            <FiBook /> Library
-          </button>
+      <nav className="shell__asideNav" aria-label="Primary">
+        <button
+          type="button"
+          className={`shell__asideNavItem ${isActive("/for-you") ? "isAccent" : ""}`}
+          onClick={() => navigate("/for-you")}
+        >
+          <FiHome aria-hidden />
+          For you
+        </button>
 
-          <button type="button" className="shell__asideNavItem isDisabled">
-            <FiHeadphones /> Highlights
-          </button>
+        <button
+          type="button"
+          className={`shell__asideNavItem ${isActive("/library") ? "isAccent" : ""}`}
+          onClick={() => navigate("/library")}
+        >
+          <FiBookmark aria-hidden />
+          My Library
+        </button>
 
-          <button type="button" className="shell__asideNavItem isDisabled">
-            <FiSearch /> Search
-          </button>
+        <button type="button" className="shell__asideNavItem isDisabled">
+          <FiEdit2 aria-hidden />
+          Highlights
+        </button>
 
+        <button type="button" className="shell__asideNavItem isDisabled">
+          <FiSearch aria-hidden />
+          Search
+        </button>
+      </nav>
+
+      {isPlayerRoute ? (
+        <div className="shell__fontScale">
+          <div className="shell__fontScaleLabel">Text size</div>
+          <div className="shell__fontScaleRow">
+            {[0, 1, 2, 3].map((step) => (
+              <button
+                key={step}
+                type="button"
+                className={`shell__fontScaleBtn ${readerFontScale === step ? "isOn" : ""}`}
+                aria-pressed={readerFontScale === step}
+                aria-label={`Reader text size ${step + 1} of 4`}
+                onClick={() => dispatch(uiActions.setReaderFontScale(step))}
+              >
+                <span
+                  className="shell__fontScaleAa"
+                  style={{ fontSize: 12 + step * 2 }}
+                >
+                  Aa
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="shell__asideFoot">
+        <nav className="shell__asideNav" aria-label="Account">
           <button
             type="button"
             className={`shell__asideNavItem ${isActive("/settings") ? "isAccent" : ""}`}
             onClick={() => navigate("/settings")}
           >
-            <FiSettings /> Settings
+            <FiSettings aria-hidden />
+            Settings
           </button>
 
           <button type="button" className="shell__asideNavItem isDisabled">
-            <FiHelpCircle /> Help &amp; Support
+            <FiHelpCircle aria-hidden />
+            Help &amp; Support
           </button>
         </nav>
 
-        <div style={{ marginTop: "auto" }}>
-          {user ? (
-            <button
-              type="button"
-              className="shell__asideNavItem"
-              onClick={async () => {
-                await logout();
-                navigate("/for-you");
-                closeDrawer?.();
-              }}
-              disabled={!firebaseReady}
-            >
-              <FiLogOut /> Logout
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="shell__asideNavItem"
-              disabled={!firebaseReady}
-              onClick={() => {
-                dispatch(uiActions.openAuthModal("login"));
-                closeDrawer?.();
-              }}
-            >
-              <FiLogIn /> Login
-            </button>
-          )}
-        </div>
+        {user ? (
+          <button
+            type="button"
+            className="shell__asideNavItem"
+            onClick={async () => {
+              await logout();
+              navigate("/for-you");
+              closeDrawer?.();
+            }}
+            disabled={!firebaseReady}
+          >
+            <FiLogOut aria-hidden />
+            Logout
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="shell__asideNavItem"
+            disabled={!firebaseReady}
+            onClick={() => {
+              dispatch(uiActions.openAuthModal("login"));
+              closeDrawer?.();
+            }}
+          >
+            <FiLogIn aria-hidden />
+            Login
+          </button>
+        )}
       </div>
-
-      {/* Visual logo under nav on desktop-ish layouts */}
-      {placement === "aside" ? (
-        <Link href="/for-you">
-          <Image
-            alt=""
-            src="/login.png"
-            width={200}
-            height={138}
-            style={{ marginTop: 16, borderRadius: 12 }}
-          />
-        </Link>
-      ) : null}
-    </>
+    </div>
   );
 }

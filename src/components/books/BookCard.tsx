@@ -1,14 +1,73 @@
 "use client";
 
 import Link from "next/link";
+import { FiClock, FiStar } from "react-icons/fi";
 
 import { RemoteBookCover } from "@/components/books/RemoteBookCover";
+import { formatDuration } from "@/lib/format-duration";
 import type { Book } from "@/types/book";
 
-export function BookCard({ book }: { book: Book }) {
+import styles from "./BookCard.module.css";
+
+export type BookCardProps = {
+  book: Book;
+  linkClassName?: string;
+  variant?: "default" | "tile";
+};
+
+export function BookCard({
+  book,
+  linkClassName,
+  variant = "default",
+}: BookCardProps) {
+  const linkClass = linkClassName?.trim();
+
+  if (variant === "tile") {
+    const durationText =
+      book.durationSeconds != null
+        ? formatDuration(book.durationSeconds)
+        : "—";
+    const ratingText =
+      book.averageRating != null
+        ? book.averageRating.toFixed(1)
+        : "—";
+    const rootClass = [styles.tile, linkClass].filter(Boolean).join(" ");
+
+    return (
+      <Link href={`/book/${book.id}`} className={rootClass || undefined}>
+        {book.subscriptionRequired ? (
+          <span className={styles.tilePremium}>Premium</span>
+        ) : null}
+        <div className={styles.tileCover}>
+          <RemoteBookCover
+            src={book.imageLink}
+            alt=""
+            className={styles.tileCoverImg}
+          />
+        </div>
+        <div className={styles.tileTitle}>{book.title}</div>
+        <div className={styles.tileAuthor}>{book.author}</div>
+        {book.subTitle ? (
+          <div className={styles.tileSubtitle}>{book.subTitle}</div>
+        ) : null}
+        <div className={styles.tileMeta}>
+          <span className={styles.tileMetaItem}>
+            <FiClock className={styles.tileMetaIcon} aria-hidden />
+            <span>{durationText}</span>
+          </span>
+          <span className={styles.tileMetaItem}>
+            <FiStar className={styles.tileMetaIcon} aria-hidden />
+            <span>{ratingText}</span>
+          </span>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={`/book/${book.id}`}
+      className={linkClass || undefined}
       style={{
         textDecoration: "none",
         color: "inherit",

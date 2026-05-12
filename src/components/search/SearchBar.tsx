@@ -46,17 +46,17 @@ export function SearchBar({ pathname }: { pathname: string | null }) {
   if (!shouldShow) return <div />;
 
   return (
-    <div className="searchInputWrap">
-      <FiSearch className="searchIcon" />
+    <div className="searchInputWrap searchInputWrap--trailIcon">
       <input
         aria-label="Search books"
-        placeholder="Search for books..."
+        placeholder="Search for books"
         value={text}
         onFocus={() => setOpen(true)}
         onBlur={() => window.setTimeout(() => setOpen(false), 150)}
         onChange={(e) => setText(e.target.value)}
-        className="searchInput"
+        className="searchInput searchInput--trailIcon"
       />
+      <FiSearch className="searchIcon searchIcon--trail" aria-hidden />
 
       {open && (loading || text.trim()) ? (
         <div className="searchResultsPanel">

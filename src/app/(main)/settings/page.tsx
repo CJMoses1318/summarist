@@ -7,7 +7,7 @@ export default function SettingsPage() {
   return (
     <Suspense
       fallback={
-        <main className="pagePad">
+        <main className="settingsPage pagePad">
           <SkeletonBlock height={260} />
         </main>
       }

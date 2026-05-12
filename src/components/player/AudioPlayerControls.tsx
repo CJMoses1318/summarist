@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AiOutlineBackward,
-  AiOutlineForward,
-  AiOutlinePause,
   AiOutlineLoading3Quarters,
+  AiOutlinePause,
   AiOutlineCaretRight,
 } from "react-icons/ai";
+import { IoPlaySkipBack, IoPlaySkipForward } from "react-icons/io5";
+
+import { RemoteBookCover } from "@/components/books/RemoteBookCover";
+
+const SKIP_SEC = 10;
 
 type Props = {
   src: string;
+  title: string;
+  author: string;
+  coverSrc: string;
   onEnded?: () => void;
 };
 
@@ -21,11 +27,19 @@ function formatSeconds(total: number): string {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function AudioPlayerControls({ src, onEnded }: Props) {
+export function AudioPlayerControls({
+  src,
+  title,
+  author,
+  coverSrc,
+  onEnded,
+}: Props) {
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [current, setCurrent] = useState(0);
   const [busy, setBusy] = useState(true);
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
 
   const audio = useMemo(() => new Audio(src), [src]);
 
@@ -33,7 +47,7 @@ export function AudioPlayerControls({ src, onEnded }: Props) {
     audio.preload = "metadata";
 
     const onLoadedMeta = () => {
-      setDuration(audio.duration || 0);
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       setBusy(false);
     };
 
@@ -41,14 +55,16 @@ export function AudioPlayerControls({ src, onEnded }: Props) {
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
 
+    const onEndedHandler = () => {
+      setPlaying(false);
+      onEndedRef.current?.();
+    };
+
     audio.addEventListener("loadedmetadata", onLoadedMeta);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("playing", onPlay);
     audio.addEventListener("pause", onPause);
-    audio.addEventListener("ended", () => {
-      setPlaying(false);
-      onEnded?.();
-    });
+    audio.addEventListener("ended", onEndedHandler);
 
     return () => {
       audio.pause();
@@ -56,8 +72,9 @@ export function AudioPlayerControls({ src, onEnded }: Props) {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("playing", onPlay);
       audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEndedHandler);
     };
-  }, [audio, onEnded]);
+  }, [audio]);
 
   const togglePlay = async () => {
     if (!audio.paused) {
@@ -68,60 +85,95 @@ export function AudioPlayerControls({ src, onEnded }: Props) {
   };
 
   const skipForward = async () => {
-    audio.currentTime = Math.min(audio.duration, audio.currentTime + 30);
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + SKIP_SEC);
     if (!playing) await audio.play();
   };
 
   const skipBack = async () => {
-    audio.currentTime = Math.max(0, audio.currentTime - 30);
+    audio.currentTime = Math.max(0, audio.currentTime - SKIP_SEC);
     if (!playing) await audio.play();
   };
 
   const progress = duration ? Math.min(1, Math.max(0, current / duration)) : 0;
 
-  const setFromClick = async (pct: number) => {
+  const setFromInput = async (pct: number) => {
     if (!duration) return;
     audio.currentTime = pct * duration;
     if (!playing) await audio.play();
   };
 
   return (
-    <div className="playerBar">
-      <div className="playerBar__buttons">
-        <button type="button" className="playerIconBtn" onClick={skipBack}>
-          <AiOutlineBackward aria-hidden />
-        </button>
+    <footer className="audioDock" role="region" aria-label="Audio player">
+      <div className="audioDock__inner">
+        <div className="audioDock__media">
+          <RemoteBookCover
+            alt=""
+            src={coverSrc}
+            width={56}
+            height={84}
+            className="audioDock__thumb"
+          />
+          <div className="audioDock__meta">
+            <div className="audioDock__title">{title}</div>
+            <div className="audioDock__author">{author}</div>
+          </div>
+        </div>
 
-        <button type="button" className="playerPlayBtn" onClick={togglePlay}>
-          {busy ? (
-            <AiOutlineLoading3Quarters className="spin" />
-          ) : playing ? (
-            <AiOutlinePause />
-          ) : (
-            <AiOutlineCaretRight />
-          )}
-        </button>
+        <div className="audioDock__controls">
+          <button
+            type="button"
+            className="audioDock__skipBtn"
+            aria-label={`Rewind ${SKIP_SEC} seconds`}
+            onClick={skipBack}
+          >
+            <IoPlaySkipBack aria-hidden className="audioDock__skipIcon" />
+            <span className="audioDock__skipLabel">{SKIP_SEC}</span>
+          </button>
 
-        <button type="button" className="playerIconBtn" onClick={skipForward}>
-          <AiOutlineForward aria-hidden />
-        </button>
-      </div>
+          <button
+            type="button"
+            className="audioDock__playBtn"
+            aria-label={playing ? "Pause" : "Play"}
+            onClick={() => void togglePlay()}
+          >
+            {busy ? (
+              <AiOutlineLoading3Quarters className="spin" aria-hidden />
+            ) : playing ? (
+              <AiOutlinePause aria-hidden />
+            ) : (
+              <AiOutlineCaretRight aria-hidden />
+            )}
+          </button>
 
-      <div className="playerBar__timeline">
-        <input
-          className="playerRange"
-          type="range"
-          min={0}
-          max={1}
-          step={0.001}
-          value={progress}
-          onChange={(e) => setFromClick(Number(e.target.value))}
-        />
-        <div className="playerTimeRow">
-          <span>{formatSeconds(current)}</span>
-          <span>{formatSeconds(duration)}</span>
+          <button
+            type="button"
+            className="audioDock__skipBtn"
+            aria-label={`Fast forward ${SKIP_SEC} seconds`}
+            onClick={() => void skipForward()}
+          >
+            <IoPlaySkipForward aria-hidden className="audioDock__skipIcon" />
+            <span className="audioDock__skipLabel">{SKIP_SEC}</span>
+          </button>
+        </div>
+
+        <div className="audioDock__timeline">
+          <span className="audioDock__time">{formatSeconds(current)}</span>
+          <input
+            className="audioDock__range"
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={progress}
+            aria-valuemin={0}
+            aria-valuemax={duration || 0}
+            aria-valuenow={current}
+            aria-label="Playback position"
+            onChange={(e) => void setFromInput(Number(e.target.value))}
+          />
+          <span className="audioDock__time">{formatSeconds(duration)}</span>
         </div>
       </div>
-    </div>
+    </footer>
   );
 }

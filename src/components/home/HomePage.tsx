@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiFillAudio, AiFillBulb, AiFillFileText } from "react-icons/ai";
 import { BiCrown } from "react-icons/bi";
 import { BsStarFill, BsStarHalf } from "react-icons/bs";
@@ -33,6 +33,16 @@ const statsB = [
 export default function HomePage() {
   const dispatch = useAppDispatch();
   const openLogin = () => dispatch(uiActions.openAuthModal("login"));
+
+  const [statsActiveIndex, setStatsActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const len = statsA.length;
+    const id = setInterval(() => {
+      setStatsActiveIndex((i) => (i + 1) % len);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <>
@@ -120,8 +130,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <StatisticPair headings={statsA} reverse={false} />
-            <StatisticPair headings={statsB} reverse />
+            <StatisticPair headings={statsA} reverse={false} active={statsActiveIndex} />
+            <StatisticPair headings={statsB} reverse active={statsActiveIndex} />
           </div>
         </div>
       </section>
@@ -300,11 +310,12 @@ function FooterLinks({ labels }: { labels: string[] }) {
 function StatisticPair({
   headings,
   reverse,
+  active,
 }: {
   headings: string[];
   reverse: boolean;
+  active: number;
 }) {
-  const [active, setActive] = useState(0);
 
   const detailsLeft = useMemo(
     () => (
@@ -371,8 +382,6 @@ function StatisticPair({
         <div
           key={h}
           className={`statistics__heading ${active === idx ? "statistics__heading--active" : ""}`}
-          onMouseEnter={() => setActive(idx)}
-          onFocus={() => setActive(idx)}
         >
           {h}
         </div>
