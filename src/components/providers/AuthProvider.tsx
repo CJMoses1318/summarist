@@ -411,10 +411,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {client === null ? (
-        <div className="banner">
-          Firebase is not configured. Create `.env.local` from `env.example`, set
-          `NEXT_PUBLIC_FIREBASE_*` (no quotes or spaces after `=`), and restart the
-          dev server. Use `.env.local` — Next.js does not load `env.local`.
+        <div className="banner" role="alert">
+          <strong>Firebase web config is missing</strong> (no{" "}
+          <code>NEXT_PUBLIC_FIREBASE_*</code> values in this build).{" "}
+          <strong>Local:</strong> put them in <code>.env.local</code> and restart the dev server.{" "}
+          <strong>Vercel / production:</strong> add the same variables under Project Settings →
+          Environment Variables, then redeploy — <code>.env.local</code> is never sent to the host
+          and is not used in production builds.
         </div>
       ) : null}
       {children}

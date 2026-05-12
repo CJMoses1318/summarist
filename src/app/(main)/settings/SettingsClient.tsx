@@ -32,6 +32,13 @@ export function SettingsClient() {
   if (!user) {
     return (
       <main className="settingsPage pagePad settingsPage--guest">
+        {checkout === "success" ? (
+          <div className="authError settingsPage__checkoutNote">
+            Thanks! Stripe can take up to a minute to sync subscription status via webhook.
+            Refresh shortly if needed. Log in with the same email you used at checkout to see
+            your plan here.
+          </div>
+        ) : null}
         <Image src="/login.png" alt="" width={240} height={165} />
         <div className="settingsPage__guestTitle">Log in to see your subscription</div>
       </main>

@@ -86,7 +86,13 @@ export default function ChoosePlanPage() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({ error: "Bad response" }));
-        alert((body as { error?: string }).error ?? "Could not create checkout.");
+        const b = body as { error?: string; debug?: string; stripeCode?: string };
+        const parts = [
+          b.error ?? "Could not create checkout.",
+          b.debug,
+          b.stripeCode ? `Stripe: ${b.stripeCode}` : "",
+        ].filter(Boolean);
+        alert(parts.join("\n\n"));
         return;
       }
 

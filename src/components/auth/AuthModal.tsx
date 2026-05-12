@@ -9,6 +9,7 @@ import {
 } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 
+import { AuthOverlayPortal } from "@/components/auth/AuthOverlayPortal";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { uiActions } from "@/store/uiSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -109,22 +110,23 @@ export function AuthModal() {
   };
 
   return (
-    <div className="authOverlay" aria-hidden={!open} role="dialog" aria-modal="true">
-      <div className="authBackdrop" onClick={close} />
+    <AuthOverlayPortal>
+      <div className="authOverlay" aria-hidden={!open} role="dialog" aria-modal="true">
+        <div className="authBackdrop" onClick={close} />
 
-      <div className="authModalCard">
-        <button
-          type="button"
-          className="authModalClose"
-          onClick={close}
-          aria-label="Close"
-        >
-          <AiOutlineClose />
-        </button>
+        <div className="authModalCard">
+          <button
+            type="button"
+            className="authModalClose"
+            onClick={close}
+            aria-label="Close"
+          >
+            <AiOutlineClose />
+          </button>
 
-        <h2 className="authModalTitle" id="auth-modal-title">
-          {mode === "register" ? "Sign up for Summarist" : "Log in to Summarist"}
-        </h2>
+          <h2 className="authModalTitle" id="auth-modal-title">
+            {mode === "register" ? "Sign up for Summarist" : "Log in to Summarist"}
+          </h2>
 
         {error ? <div className="authError">{error}</div> : null}
 
@@ -245,5 +247,6 @@ export function AuthModal() {
         </div>
       </div>
     </div>
+    </AuthOverlayPortal>
   );
 }

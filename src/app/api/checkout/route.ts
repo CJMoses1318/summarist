@@ -3,10 +3,23 @@ import Stripe from "stripe";
 
 import { getAdminAuth } from "@/lib/firebase/admin";
 
+/** Expose `debug` / `stripeCode` on error JSON (set CHECKOUT_VERBOSE_ERRORS=1 for `next start`). */
+const exposeCheckoutDetails =
+  process.env.NODE_ENV === "development" ||
+  process.env.CHECKOUT_VERBOSE_ERRORS === "1";
+
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
   return new Stripe(key);
+}
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function isFirebaseAuthCode(code: unknown): boolean {
+  return typeof code === "string" && code.startsWith("auth/");
 }
 
 export async function POST(request: Request) {
@@ -39,17 +52,51 @@ export async function POST(request: Request) {
     );
   }
 
+  const authHeader =
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+
+  if (!authHeader) {
+    return NextResponse.json(
+      { error: "Missing authorization token." },
+      { status: 401 },
+    );
+  }
+
+  let decoded: { uid: string };
   try {
-    const authHeader =
-      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-    const decoded = await getAdminAuth().verifyIdToken(authHeader);
+    decoded = await getAdminAuth().verifyIdToken(authHeader);
+  } catch (err) {
+    console.error("[api/checkout] verifyIdToken failed:", err);
+    const code =
+      typeof err === "object" && err !== null && "code" in err
+        ? (err as { code?: unknown }).code
+        : undefined;
+    const friendly =
+      isFirebaseAuthCode(code) || code === "app/invalid-credential"
+        ? "Invalid or expired session. Sign in again."
+        : "Could not verify sign-in.";
+    return NextResponse.json(
+      {
+        error: friendly,
+        ...(exposeCheckoutDetails && { debug: errMessage(err) }),
+      },
+      { status: 401 },
+    );
+  }
 
-    const body = (await request.json()) as { billing?: string };
-    const billingCycle = body.billing === "yearly" ? "annual" : "monthly";
+  let body: { billing?: string };
+  try {
+    body = (await request.json()) as { billing?: string };
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
 
-    const price = billingCycle === "monthly" ? monthlyPriceId : yearlyPriceId;
+  const billingCycle = body.billing === "yearly" ? "annual" : "monthly";
+  const price = billingCycle === "monthly" ? monthlyPriceId : yearlyPriceId;
 
-    const session = await stripe.checkout.sessions.create({
+  let session: Stripe.Response<Stripe.Checkout.Session>;
+  try {
+    session = await stripe.checkout.sessions.create({
       mode: "subscription",
       success_url: `${siteUrl}/settings?checkout=success`,
       cancel_url: `${siteUrl}/choose-plan`,
@@ -79,16 +126,35 @@ export async function POST(request: Request) {
               },
             },
     });
-
-    if (!session.url) {
+  } catch (err) {
+    console.error("[api/checkout] Stripe checkout.sessions.create failed:", err);
+    if (err instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: "Stripe did not return a checkout URL" },
-        { status: 500 },
+        {
+          error: "Could not create checkout session.",
+          ...(exposeCheckoutDetails && {
+            debug: err.message,
+            stripeCode: err.code,
+          }),
+        },
+        { status: 502 },
       );
     }
-
-    return NextResponse.json({ url: session.url });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Checkout failed.",
+        ...(exposeCheckoutDetails && { debug: errMessage(err) }),
+      },
+      { status: 500 },
+    );
   }
+
+  if (!session.url) {
+    return NextResponse.json(
+      { error: "Stripe did not return a checkout URL" },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ url: session.url });
 }

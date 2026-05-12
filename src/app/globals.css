@@ -50,7 +50,8 @@ button {
   align-items: center;
   justify-content: center;
   padding: 12px;
-  z-index: 60;
+  z-index: 10000;
+  isolation: isolate;
 }
 
 .authBackdrop {
@@ -59,30 +60,21 @@ button {
   background: rgba(0, 35, 64, 0.45);
 }
 
-.authPanelWrapper {
+.authModalCard {
   position: relative;
-  justify-self: start;
-  align-self: center;
-  width: clamp(520px, 42vw, 720px);
-  background: rgba(229, 234, 234, 0.78);
-  border-radius: 20px;
-  padding: 18px 18px 20px;
-  box-shadow: 0 48px 80px rgba(3, 43, 65, 0.3);
+  z-index: 1;
+  width: min(440px, 100%);
+  background: rgba(239, 244, 244, 0.98);
+  border-radius: 12px;
+  padding: 44px 28px 28px;
+  box-shadow: 0 48px 80px rgba(3, 43, 65, 0.28);
 }
 
-.authPanelControls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 6px 10px;
-  color: #6f7b82;
-}
-
-.authPanelDots {
-  display: flex;
-}
-
-.authPanelCloseBtn {
+.authModalClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: auto;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -90,22 +82,70 @@ button {
   border: none;
   display: grid;
   place-items: center;
-}
-
-.authPanelCloseBtn svg {
+  cursor: pointer;
   color: #69767d;
 }
 
-.authPanel {
-  background: rgba(239, 244, 244, 0.98);
-  border-radius: 12px;
-  padding: 32px;
+.authModalClose:hover {
+  color: var(--summarist-navy);
 }
 
-.authPanelHeading {
-  margin-bottom: 20px;
+.authModalClose svg {
+  display: block;
+  font-size: 20px;
+}
+
+.authModalTitle {
+  margin: 0 0 20px;
   font-size: 22px;
   font-weight: 700;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.authModalFooter {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.authFooterPrompt {
+  margin: 0;
+  color: var(--summarist-muted);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.authFooterLink {
+  border: none;
+  background: none;
+  color: #0659c4;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.authFooterLink:hover {
+  color: #0676e5;
+}
+
+.authModalGateLoad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+
+.authModalLoadPulse {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(3, 43, 65, 0.12);
+  border-top-color: var(--summarist-navy);
+  border-radius: 50%;
+  animation: summarist-spin 0.9s linear infinite;
 }
 
 .authError {
@@ -195,9 +235,14 @@ button {
   height: 40px;
   border-radius: 6px;
   border: none;
-  background: rgba(239, 244, 244, 0.94);
+  background: #fff;
+  color: var(--summarist-navy);
   box-shadow: 0 -1px 0 rgba(3, 43, 65, 0.15) inset;
   padding-left: 10px;
+}
+
+.authInput::placeholder {
+  color: #6f8188;
 }
 
 .authPasswordRow {
@@ -230,6 +275,18 @@ button {
   border-radius: 6px;
   border: none;
   background: rgba(239, 244, 244, 0.94);
+  color: var(--summarist-navy);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.authPrimaryBtn:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.authPrimaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .authToggleRow {
@@ -256,9 +313,9 @@ button {
     padding: 12px;
   }
 
-  .authPanelWrapper {
+  .authModalCard {
     width: 100%;
-    max-width: 640px;
+    max-width: 440px;
   }
 }
 
